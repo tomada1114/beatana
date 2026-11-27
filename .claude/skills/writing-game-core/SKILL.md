@@ -31,8 +31,11 @@ enters core as a plain value.
 
 - `packages/core/src/prng.ts` implements xoshiro128** (Blackman & Vigna,
   https://prng.di.unimi.it/, checked 2026-11-05) on four 32-bit words, seeded through
-  splitmix32 from one 32-bit seed. It is the only generator in the repository; a second
-  one, or a "quick" helper beside it, splits the sequence a replay depends on.
+  splitmix32 from one 32-bit seed. It is the only generator implementation in the
+  repository; a second one, or a "quick" helper beside it, splits the sequence a replay
+  depends on. Beatana runs three instances of it, one per stream (line-ups, offers,
+  enemies), for the reason in
+  [references/beatana-ruleset.md](references/beatana-ruleset.md).
 - Integer operations only: `Math.imul`, `<<`, `>>>`, `>>`, `|`, `&`, `^`, `+`, `-`,
   `|0`. A value leaves the generator unsigned (`>>> 0`).
 - `nextU32()` is the primitive. `nextInt(maxExclusive)` uses rejection sampling — never
@@ -55,6 +58,9 @@ enters core as a plain value.
 - `packages/core/src/index.ts` is the only module `apps/web` imports. It exports
   `createGame(seed, config)`, `applyMove(state, move)`, `isOver(state)`, `score(state)`,
   `replay(record)`, `seedFrom`, `dailySeed`, `RULES_VERSION`, and the error classes.
+  Beatana adds `canApply(state, move)`, the one legality check scenes call before
+  `applyMove`; its phases, moves, beat order, and `State.lastBeat` are in
+  [references/beatana-ruleset.md](references/beatana-ruleset.md).
 - `applyMove` is pure: it returns a new object and never mutates its input. It throws
   `InvalidMoveError` with code `ERR_INVALID_MOVE` for an out-of-range cell or a finished
   game. The throw marks a caller bug; scenes check `isOver` and the cell range first so
@@ -175,4 +181,5 @@ by each game; its rules are not a product decision.
   `n + k ≤ 20` moves always exists: the board is never uniform and always solvable
   within the limit.
 
-Replacing the sample: **REQUIRED:** `starting-an-app`.
+Replacing the sample: **REQUIRED:** `starting-an-app`. What replaces it:
+[references/beatana-ruleset.md](references/beatana-ruleset.md).

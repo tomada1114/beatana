@@ -95,7 +95,8 @@ Rules the template already fixes and this game keeps unchanged are marked (templ
 
 - Text contrast ≥ 4.5:1; board cells, intent marks, gauges and controls ≥ 3:1. Measured
   values are in the design direction.
-- Keyboard focus is always visible: a 2 px ring, 4 px outside the control (template).
+- Keyboard focus is always visible: a 4 px ring, 4 px outside the control (the design
+  lock).
 - Sprites are identified by silhouette and a name label on Weapon select, Pick and
   Interlude, never by colour alone.
 
@@ -106,17 +107,11 @@ Rules the template already fixes and this game keeps unchanged are marked (templ
 - The labels in the UX flows give each string's meaning in English; the shipped strings
   are their Japanese equivalents, kept in one strings module so a second language can be
   added later without touching scenes.
-- Text is drawn with the device's system Japanese font, not a pixel font. Open: a
-  redistributable Japanese pixel font — settled with the design direction.
+- Text is drawn in the bundled Japanese pixel font DotGothic16 (the design lock).
 - Short labels, no sentence-ending punctuation on buttons; numbers as digits; dates as
   `YYYY-MM-DD` (UTC).
 - An item description fits two lines of the Pick card at the body size; longer effects
   are split across levels rather than abbreviated.
-
-## Open items
-
-- Japanese pixel font — the design direction decides whether one with a compatible
-  licence is used.
 
 ## Decision log
 

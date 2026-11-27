@@ -3,10 +3,10 @@ name: designing-ui
 description: >
   Use when choosing or changing a colour, font, type size, radius, spacing, or motion
   value; editing apps/web/src/theme/tokens.ts; finding a colour or size literal
-  elsewhere in apps/web; checking text, tile, control, or focus-outline contrast (4.5:1,
-  3:1); changing the tile palette or glyphs; or running a game's own visual design stage
-  that replaces the sample's design lock in references/design-lock.md and
-  docs/design/design-direction.md.
+  elsewhere in apps/web; checking text, cell, control, or focus-outline contrast (4.5:1,
+  3:1); the accent, danger, or health colour roles; applying the design lock in
+  references/design-lock.md to tokens.ts and docs/design/contrast-pairs.json; or
+  changing the direction recorded in docs/design/design-direction.md.
 ---
 
 # Designing UI
@@ -23,25 +23,25 @@ description: >
   values as code. When the two disagree, that is a bug to fix in one change, not a
   choice between them. `docs/design/design-direction.md` is the record the lock was
   written from.
-- The shipped lock describes the sample game. A game replaces it in its own design stage
-  — direction, role rules, tokens, and a re-measured contrast table — in one change
-  together with `tokens.ts` and `docs/design/design-direction.md`.
+- The lock describes Beatana; `tokens.ts` still holds the sample's values until the
+  design-token issue applies it (the lock's own note says so). Until then the mismatch
+  is expected, not a bug; no other change edits either side.
 - Changing a value inside the direction is an edit. Changing the direction itself (a
   light theme, textures, image tiles) is a new design stage, not an edit.
-- The role rules are what review catches most: tile colours never appear in UI chrome;
-  `accent` is only the primary button fill, the keyboard focus ring, and "New best", and
-  is not a tile colour; `textMuted` is only for secondary lines.
+- The role rules are what review catches most: `accent` (vermilion) is only what the
+  player can press or gain right now, and never danger or health; `danger` (amber) is
+  only announced cells and intent marks, never anything pressable; no token recolours a
+  sprite; every shape is square (radius 0).
 - One theme. Games run as full-screen canvases inside portal pages, so the lock does not
   follow the system colour scheme.
 
 ## Tokens
 
 - `apps/web/src/theme/tokens.ts` exports `colors`, `type`, `radius`, `space`, `motion`,
-  and `layout` as `as const` objects. `layout` holds `designWidth` 720, `designHeight`
-  1280, `tapMin` 88, `focusRing` 2, `focusOffset` 4, `tileSize` 112, `tileGap` 16, and
-  `resultPauseMs` 300. Each colour exists twice from one source: a `0xRRGGBB` number for
-  Phaser and a `css` string for the DOM, so the canvas and the DOM elements (the Copy
-  result fallback, the page background) cannot drift.
+  and `layout` as `as const` objects; `layout`'s keys and values are the lock's layout
+  table. Each colour exists twice from one source: a `0xRRGGBB` number for Phaser and a
+  `css` string for the DOM, so the canvas and the DOM elements (the Copy result
+  fallback, the page background) cannot drift.
 - Nothing else in `apps/web` writes a colour or size literal. A size that is not yet a
   token is added to `layout` in `tokens.ts`, not written inline.
 - No lint rule enforces this. A reviewer looks for `0x`, `#`, and bare numeric sizes or
@@ -51,7 +51,8 @@ description: >
 ## Contrast
 
 - Text is at least 4.5:1 against its background; tiles, controls, and the focus outline
-  are at least 3:1. Colour is never the only signal: each tile kind has a glyph.
+  are at least 3:1. Colour is never the only signal: danger always carries a digit or
+  hatching, and an intent mark is an icon with a digit.
 - Ratios are WCAG 2.2 relative-luminance contrast (SC 1.4.3 and 1.4.11,
   https://www.w3.org/TR/WCAG22/, checked 2026-11-05). Changing any colour re-runs every
   row of the contrast table in the lock, and the new ratios land in the same change. A
@@ -60,9 +61,7 @@ description: >
   `tokens.ts` and fails below its threshold or when a colour token appears in no pair.
 - Measure pairs as they are drawn. A new element on a new background adds a row; a row
   for a pair that no longer appears is removed.
-- The focus ring is the pair most easily missed. `accent` against the tile colours is
-  low, so the ring is 2 px drawn 4 px outside the tile, in the gap on `surface`; against
-  `surface`, `accent` measures 6.82.
-- The colour-blind-safe tile palette and its glyphs are chosen together. Swapping a tile
-  colour re-checks both its contrast row and that the four kinds stay distinguishable
-  without colour.
+- The focus ring is the pair most easily missed: it is measured on every background it
+  is drawn on (`surface` and `surfaceRaised` in the lock), and it is drawn
+  `layout.focusOffset` outside the control, never against a sprite.
+- The font is DotGothic16 (file and licence: `adding-assets`).

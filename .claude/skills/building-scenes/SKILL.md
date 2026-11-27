@@ -1,13 +1,13 @@
 ---
 name: building-scenes
 description: >
-  Use when writing or reviewing apps/web/src/main.ts or apps/web/src/scenes/**
-  (BootScene, TitleScene, PlayScene, ResultScene): a Phaser 4 API such as Phaser.Game, a
-  Scene, Scale.FIT, a tween, pointer or keyboard input; drawing the board from core
-  State; the keyboard cursor and focus; scene transitions and start data; the Copy
-  result fallback; document.body.dataset.ready, document.body.dataset.scene, or the
-  #debug-moves mirror the e2e smoke test reads; a Phaser 3 API that no longer
-  type-checks; or a scene that holds rule logic or mutates state.
+  Use when writing or reviewing apps/web/src/main.ts or apps/web/src/scenes/** (Boot,
+  Title, WeaponSelect, Battle and its Pick overlay, Interlude, Result, Credits, or the
+  sample's PlayScene): a Phaser 4 API, Scale.FIT, a tween, pointer or keyboard input,
+  the beat input buffer, animating state.lastBeat, the Japanese strings module, scene
+  transitions and start data, the Copy result fallback, document.body.dataset.ready or
+  .scene, the #debug-moves mirror the e2e smoke test reads, a Phaser 3 API that no
+  longer type-checks, or a scene that holds rule logic or mutates state.
 ---
 
 # Building Scenes
@@ -26,12 +26,18 @@ changing a scene. This skill holds the judgment they leave to the code.
 ## Scenes
 
 - One `Phaser.Game`, created in `apps/web/src/main.ts` only after it has awaited
-  `selectPlatform()` and `init()` (10 s timeout, fallback to local). One scene per file
-  in `apps/web/src/scenes/`: `BootScene`, `TitleScene`, `PlayScene`, `ResultScene`.
-- Boot loads assets behind a progress bar and, on a failed asset, shows a retry prompt.
-  Title offers the daily board (primary, focused by default) and Practice. Play runs one
-  board. Result offers Copy result (Daily only), Again (same seed), Practice (new seed),
-  and Title. A Practice Result has no best line, no "New best!" and no Copy result.
+  `selectPlatform()` and `init()` (10 s timeout, fallback to local), with
+  `render.pixelArt: true` so sprites scale with nearest-neighbour sampling. One scene
+  per file in `apps/web/src/scenes/`.
+- Beatana's scenes are Boot, Title, WeaponSelect, Battle, Interlude, Result and Credits
+  — one per screen in `docs/product/ux-flows.md`, except Pick, which Battle draws as an
+  overlay: the beat buffer and the run's `State` then have one owner, and a cleared
+  buffer cannot leak into a pick. Until the first game issue lands, the code still has
+  the sample's Boot, Title, Play and Result.
+- Boot loads the sprites and the font behind a progress bar (asset rules: **REQUIRED:**
+  `adding-assets`) and, on a failed asset, shows a retry prompt. What each other screen
+  offers is in the UX flows. A Practice Result has no best line, no "New best!" and no
+  Copy result.
 - No `Platform` method is called before `init()` resolves.
 - Platform events fire from these call sites: Boot's preload start (`loadingStart`),
   Title first becoming interactive (`loadingStop`, once), a board becoming playable in
@@ -61,27 +67,32 @@ changing a scene. This skill holds the judgment they leave to the code.
 - A scene never decides a rule. Neighbour logic, the solved check, and the score come
   from core (`applyMove`, `isOver`, `score`). A second copy of a rule in a scene drifts
   from the one a replay checks.
-- On input: check that the cell is on the board and `!isOver(state)`, then
-  `state = applyMove(state, move)`, push the move, redraw, and tween the changed tiles
-  for 120 ms. The guard comes first because an invalid input does nothing visible;
-  catching `ERR_INVALID_MOVE` as control flow hides real bugs.
+- On input: check `canApply(state, move)` (the sample checks the cell range and
+  `!isOver(state)`), then `state = applyMove(state, move)`, push the move, redraw, and
+  animate what `state.lastBeat` lists — hits, damage numbers, "+n", sub-weapon fire. The
+  guard comes first because an invalid input does nothing visible; catching
+  `ERR_INVALID_MOVE` as control flow hides real bugs. The one-input buffer and its
+  clearing rules are in `docs/design/ux-guidelines.md` § Input.
 - Never mutate `State`, even "just for the animation". Tween display objects, not state.
-- Score and move count update in the same frame as the move.
-- Shapes and text only; each tile kind is a colour plus a glyph (● ▲ ■ ◆). Every colour,
-  size, radius, and duration comes from `apps/web/src/theme/tokens.ts`. **REQUIRED:**
-  `designing-ui` for any value.
+- Health, score, gauge and counters update in the same frame as the move.
+- Characters are sprites drawn at an integer `layout.spriteScale`; chrome is flat fills
+  and outlines; what no asset covers is a placeholder drawn in code. Every colour, size,
+  and duration comes from `apps/web/src/theme/tokens.ts`. **REQUIRED:** `designing-ui`
+  for any value.
+- Player-facing text is Japanese and lives in one strings module under
+  apps/web/src/strings/ (created by the first game issue), keyed by an English id;
+  scenes never write a string literal the player reads. No i18n library: one language
+  ships, and a second is a second module with the same keys.
 - Leaving and returning to the tab resumes the same board. Nothing resets, and no
   platform event fires, on a visibility change.
 
 ## Input
 
 - Every action works by pointer (mouse and touch) and by keyboard. Pointer and keyboard
-  feed the same `play(cell)` path, so the two can never disagree about a move.
-- Title: Up/Down moves focus between the buttons; Enter/Space activates. Play: arrow
-  keys move the cursor, Enter/Space plays the cell, Esc is Back. The cursor starts on
-  the centre cell (12) and clamps at the edges; it does not wrap. Boot's retry accepts a
-  tap, Enter or Space. Result's focus order is Copy result (Daily only), Again,
-  Practice, Title.
+  feed the same path to one core move, so the two can never disagree about a move.
+- Keys and focus order per screen are in `docs/product/ux-flows.md` (Battle: arrows, Z
+  strike, X charge, C parry, Space wait, Esc pause). Boot's retry accepts a tap, Enter
+  or Space.
 - Tap targets are at least `layout.tapMin` (88×88) design pixels. No drag, long-press,
   double-tap, or hover-only affordance; a game that adds one adds a keyboard path in the
   same change.
@@ -105,19 +116,21 @@ changing a scene. This skill holds the judgment they leave to the code.
 
 - `document.body.dataset.ready = "true"` is set when Title accepts input — not when Boot
   ends, and not before the first frame Title can be clicked.
-- `document.body.dataset.scene = "play"` is set in Play's `create()` right after its key
-  listener is registered, and deleted when the board ends (solved or out of moves, when
-  keys stop counting) or when the scene shuts down.
-- `#debug-moves` holds the integer move count as text. It is present in every build,
-  `aria-hidden="true"` and visually hidden. Update it in the same place the on-canvas
-  counter is updated, so the two cannot drift.
+- `document.body.dataset.scene = "battle"` is set in Battle's `create()` right after its
+  key listener is registered, and deleted when the run ends or the scene shuts down.
+  (The sample sets `"play"` in Play until the first game issue.)
+- `#debug-moves` holds the run's beat count as text (the sample: its move count). It is
+  present in every build, `aria-hidden="true"` and visually hidden. Update it in the
+  same place the on-canvas state is redrawn, so the two cannot drift.
 - The boot smoke test (`tests/e2e/`, Playwright on Chromium against `vite preview` of
   the local build in `apps/web/dist`, port `E2E_PORT` (default 4173),
   `strictPort: true`) waits for `body[data-ready="true"]` within 10 s, fails on any
-  `console.error` or page error, then starts Practice, waits for
-  `body[data-scene="play"]`, presses Enter once, and expects `#debug-moves` to go from 0
-  to 1. Keep that path working when Title or Play changes, or change the test in the
-  same PR. An expected, handled failure logs `console.warn`, never `console.error`.
+  `console.error` or page error, then starts Practice, presses Enter on WeaponSelect,
+  waits for `body[data-scene="battle"]`, presses Space (wait) once, and expects
+  `#debug-moves` to go from 0 to 1. The first game issue changes the test from the
+  sample's path (`data-scene="play"`, Enter) to this one. Keep the path working when
+  Title, WeaponSelect or Battle changes, or change the test in the same PR. An expected,
+  handled failure logs `console.warn`, never `console.error`.
 - `apps/web/src/main.ts` and `apps/web/src/scenes/**` have no unit coverage floor; the
   smoke test covers them. (`apps/web/src/platform/dom-loader.ts` is the third exclusion;
   `integrating-portals` owns it.) Logic worth testing moves into a pure helper outside

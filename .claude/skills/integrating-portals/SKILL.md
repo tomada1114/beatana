@@ -86,10 +86,14 @@ two scripts follow (`.claude/rules/scripts.md`); wiring a script into `pnpm chec
 - Callers never wrap storage in try/catch. A failed write means the best score is not
   kept; the game shows no error, hides "Best", and keeps playing.
 - The daily best is stored under `<slug>:best:<YYYY-MM-DD>` (the session's day, fixed at
-  the first Title open) as an integer 1–20. A Daily score is a new best when `score > 0`
-  and either no best is stored or `score >` the stored best; 0 is never stored. Practice
-  has no best. The slug prefix keeps one game's keys apart from any other game served
-  from the same origin.
+  the first Title open) as a positive integer with no upper bound (the sample's is
+  1–20). A Daily score is a new best when `score > 0` and either no best is stored or
+  `score >` the stored best; 0 is never stored. Practice has no best. The slug prefix
+  keeps one game's keys apart from any other game served from the same origin.
+- `<slug>:hintsSeen` holds `"1"` once the first battle's three hints have all been
+  dismissed, so they show on a device's first run only. Unreadable storage shows them
+  again; that is harmless. These two are the only keys: no run state is stored, since
+  closing the tab ends the run.
 - The CrazyGames Data module has the same API as `localStorage`. It is enabled only by
   the Progress Save toggle at submission, after which the game must rely on it fully;
   its limit is 1 MB of JSON (https://docs.crazygames.com/sdk/data/, checked 2026-11-05).

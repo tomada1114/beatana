@@ -35,13 +35,15 @@ each win, so each run grows into a different fighting style.
 - **Build** — a main weapon chosen at the start, automatic sub-weapons, passive arts,
   levels and fusions, earned by taking risks (§3.5).
 - **Pixel-art presentation** — provisional ninja/samurai theme from free assets (§3.6).
+- **Score and modes** — risk-based score, Daily and Practice, the best daily score kept
+  (§3.7).
 
 ### Later
 
 - **Beat timer** — an `apps/web` clock that plays "wait" when the player is slow, for a
   real-time feel; waits until the untimed game is fun. Core does not change.
-- **More content** — 8-battle runs, a mid-boss, 20+ upgrades; waits until the 12-upgrade
-  set shows which builds are fun.
+- **More content** — 8-battle runs, a mid-boss, 20+ upgrades; waits until the MVP's
+  build set (§3.5) shows which builds are fun.
 - **Audio** — the template defers its sound helper to the first game that ships sound.
 
 ### Non-goals
@@ -76,7 +78,7 @@ each win, so each run grows into a different fighting style.
 | Charge   | Each charged beat (up to 2) raises damage and reach                    | A hit while charging clears the charge                       |
 | Parry    | A parry on the beat an attack lands negates it and counterattacks hard | A parry on any other beat does nothing and the beat is spent |
 
-Proposed values, to be confirmed by the owner and then by a first playable build:
+Starting values, accepted by the owner and tuned by the first playable build:
 
 | Item          | Value                                                                                                                                 |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,6 +97,8 @@ Proposed values, to be confirmed by the owner and then by a first playable build
   attacks are announced 2–3 beats ahead. Nothing lands unannounced.
 - The same seed and the same player actions give the same enemy choices, so a daily run
   is the same for everyone who plays it the same way.
+- Enemy kinds without a fixed cycle draw from main attack 2 : step 1 : pause 1. The
+  charger and the boss follow the fixed rules in the table.
 
 Proposed set (names provisional; the Attack column is each kind's main move):
 
@@ -108,12 +112,14 @@ Proposed set (names provisional; the Attack column is each kind's main move):
 
 ### 3.4 Run
 
-| Item   | Specification                                                 |
-| ------ | ------------------------------------------------------------- |
-| Length | 5 battles: 4 regular, then the boss                           |
-| Health | Carried from battle to battle                                 |
-| Order  | The enemy line-up of each battle is drawn from the run's seed |
-| Loss   | The run ends; the player starts a new run                     |
+| Item   | Specification                                                            |
+| ------ | ------------------------------------------------------------------------ |
+| Length | 5 battles: 4 regular, then the boss                                      |
+| Health | Carried from battle to battle                                            |
+| Order  | The enemy line-up of each battle is drawn from the run's seed            |
+| Size   | Battles 1–2: 2 enemies; battles 3–4: 3 enemies; battle 5: the boss alone |
+| Start  | Enemy start cells are drawn from the seed, distinct, in columns 5–7      |
+| Loss   | The run ends; the player starts a new run                                |
 
 ### 3.5 Upgrades
 
@@ -130,6 +136,9 @@ The build is what makes one run differ from the next.
 
 - Safe play fills the gauge slowly, so a careful player ends with a thin build and a
   bold one with a strong build.
+- The gauge and its progress carry from battle to battle, like health.
+- When every sub-weapon and art slot is full, a pick offers only level-ups of owned
+  items and fusions.
 - A pick with nothing left to offer gives 1 health instead.
 
 Main weapon — chosen at the start of the run; shapes the manual strike:
@@ -196,8 +205,8 @@ Fusions in the MVP:
 
 - **Tuning (§3.2, §3.3, §3.5, §3.7)** — the owner accepted the values as a starting
   point; a first playable build tunes them.
-- **Asset pack** — which pack, and whether one style covers the player, 4 enemies and a
-  boss; settled at the design stage.
+- **Asset pack** — first candidate recorded in the `adding-assets` skill; the first
+  asset issue checks that one style covers the player, 4 enemies and a boss.
 - **Where it is published** — played locally first; the target (own static page or a
   portal) is decided after playing. The template's portal packaging stays untouched.
 
@@ -233,3 +242,12 @@ Fusions in the MVP:
   static page, CrazyGames).
 - 2026-11-26 Assets may require attribution (rejected: CC0 only, too few packs; a
   private repository with any licence, the problem returns on publishing).
+- 2026-11-27 Battle sizes 2, 2, 3, 3 and a lone boss (rejected: a boss with an escort,
+  overlapping announcements; 3 in every battle, too hard at the start).
+- 2026-11-27 The spirit gauge carries between battles (rejected: reset per battle, which
+  wastes risk taken late in a battle).
+- 2026-11-27 Full slots offer only level-ups and fusions (rejected: replacing an owned
+  item, which needs a discard screen and move).
+- 2026-11-27 Line-ups, offers and enemy choices use separate seeded streams, so Daily
+  line-ups match however a player fights (rejected: one stream, which lets enemy draws
+  shift later line-ups).

@@ -26,8 +26,7 @@ Non-goals:
 - Multiplayer, accounts, a server, monetization.
 - A story mode or overworld; the game is battles and the choices between them.
 
-Decisions live in `docs/product/requirements.md` and the skills. The code is the
-template's sample game until the first game issue replaces it (`starting-an-app`).
+Decisions live in `docs/product/requirements.md` and the skills.
 
 ## Commands
 
@@ -106,7 +105,8 @@ tests/             # repository-level tests
 
 ## Conventions
 
-- All committed code, comments, configuration, and documentation are in English.
+- All committed code, comments, configuration, and documentation are in English; only
+  the player-facing Japanese strings module is not (`building-scenes`).
 - A comment carries only what the code cannot: a non-obvious why, a trap the next edit
   would spring, an external constraint. Default to none. TSDoc on the public surface is
   a contract and stays.
@@ -115,6 +115,5 @@ tests/             # repository-level tests
 - Documentation impact is decided by what a user can observe (a signature, a default, a
   runtime behavior, an error `code`, a setup step). When one moved, `README.md` and the
   affected `docs/` page change in the same pull request; otherwise say none is needed.
-- Sub-agent tiers (`.claude/agents/`) are named by role, never by model or effort. Hand
-  a step to one with `subagent_type`, never a bare `model`, whose effort is the
-  session's.
+- Sub-agent tiers (`.claude/agents/`) are named by role. Hand a step to one with
+  `subagent_type`, never a bare `model`, whose effort is the session's.

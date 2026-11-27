@@ -86,11 +86,12 @@ What goes, in that one issue:
 What stays:
 
 - The PRNG, `seedFrom`, `dailySeed`, replay, `RULES_VERSION`, and the error classes.
-- The Boot → Title → Play → Result skeleton, the platform adapter, storage, and the
-  packaging scripts.
-- The test hooks. The boot smoke test needs `body[data-ready="true"]`, a Practice path,
-  `body[data-scene="play"]`, and a `#debug-moves` count that one Enter moves from 0
-  to 1. Keep them, or change the smoke test in the same PR.
+- Boot, Title and Result (Play becomes Beatana's WeaponSelect and Battle), the platform
+  adapter, storage, and the packaging scripts.
+- The test hooks, which that PR moves to Beatana's path in the same change:
+  `body[data-ready="true"]`, a Practice path through WeaponSelect,
+  `body[data-scene="battle"]`, and a `#debug-moves` beat count that one Space moves from
+  0 to 1. **REQUIRED:** `building-scenes` § Test hooks.
 
 Before the game's first release, that PR deletes the sample goldens, writes the new
 ones, and keeps `RULES_VERSION = 1`; a bump is needed only once a release has shipped.
