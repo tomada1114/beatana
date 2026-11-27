@@ -1,0 +1,32 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Repository automation (bootstrap, package checks, agent skills) must run
+    // on plain Node before `pnpm install`, so it is authored as `.mjs`.
+    // Checking those files here is what makes "typecheck covers scripts" true.
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": [
+    "tests",
+    "scripts",
+    ".claude/skills",
+    "*.ts",
+    "*.mts",
+    "*.mjs",
+    // A Vite config runs in Node, so it is checked here rather than in its
+    // app's browser-only program.
+    "apps/*/vite.config.ts"
+  ],
+  // A `tests/fixtures/` file is malformed on purpose, so type-checking it
+  // reports the very defect a test asserts on.
+  "exclude": ["tests/fixtures/**"],
+  // `pnpm typecheck` is `tsc -b` on this file: it checks every workspace
+  // program below, each under its own runtime, then this one.
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/core/test" },
+    { "path": "apps/web" },
+    { "path": "apps/web/test" }
+  ]
+}
