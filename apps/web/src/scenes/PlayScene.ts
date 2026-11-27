@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 
-import * as core from "@my-game/core";
+import * as core from "@beatana/core";
 
 import { GAME_SLUG } from "../game-info.js";
 import { type Platform } from "../platform/platform.js";

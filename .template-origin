@@ -1,0 +1,6 @@
+# Where this repository was cut from, written once by the template's bootstrap.
+# Keep it committed: while it exists the bootstrap refuses a second run, and
+# tests/product-section.test.ts reads it to treat this repository as a game.
+template: https://github.com/tomada1114/web-game-template
+commit: unknown
+tree: 609391c66703fc295d8d2a8173af0d13cbb20f15

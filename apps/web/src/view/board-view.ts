@@ -1,4 +1,4 @@
-import * as core from "@my-game/core";
+import * as core from "@beatana/core";
 
 import { colors, layout } from "../theme/tokens.js";
 

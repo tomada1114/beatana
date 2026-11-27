@@ -1,5 +1,5 @@
 {
-  "name": "@my-game/core",
+  "name": "@beatana/core",
   "version": "0.0.0",
   "private": true,
   "type": "module",

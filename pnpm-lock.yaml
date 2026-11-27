@@ -246,7 +246,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@my-game/core':
+      '@beatana/core':
         specifier: workspace:*
         version: link:../../packages/core
       phaser:

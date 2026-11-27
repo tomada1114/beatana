@@ -11,10 +11,23 @@ matching one first), requirements in `docs/product/requirements.md`, file conven
 
 ## Product
 
-TODO: What this game is, in one paragraph.  
-TODO: Who it is for, and the core interaction.  
-TODO: Non-goals, copied verbatim from docs/product/requirements.md.  
-TODO: Where decisions live: docs/product/requirements.md and the skills.
+Beatana is a one-player, side-view grid battle game, a non-commercial project for the
+owner and friends. Time moves only when the player acts: read the announced enemy
+attacks, then spend one beat on move, strike, charge, parry or wait; more risk pays
+more. A play is a run of five battles ending in a boss, and risky actions earn upgrade
+picks. Every name, term, sprite and layout is the game's own.
+
+Non-goals:
+
+- A chip, card or deck system — the owner ruled it out.
+- Random hit, miss or damage rolls, and attacks that land unannounced — enemies choose
+  at random, but what they chose is always shown before it lands.
+- Real-time (clock-driven) rules in `packages/core`.
+- Multiplayer, accounts, a server, monetization.
+- A story mode or overworld; the game is battles and the choices between them.
+
+Decisions live in `docs/product/requirements.md` and the skills. The code is the
+template's sample game until the first game issue replaces it (`starting-an-app`).
 
 ## Commands
 
@@ -33,18 +46,6 @@ pnpm test:e2e      # rebuild apps/web/dist, then the Chromium boot smoke (E2E_PO
 pnpm check:staged  # the pre-commit secret check by hand; pnpm clean removes build output
 pnpm repo:labels   # create/update GitHub labels from .github/labels.yml
 ```
-
-<!-- template-only:start -->
-
-```sh
-pnpm bootstrap:e2e   # run the bootstrap end to end on a copy
-pnpm bootstrap:check # the same, then install and run the full gate in the generated repository
-```
-
-This checkout is the template itself. The bootstrap flow removes itself, this block, and
-`.claude/rules/bootstrap.md` from a generated repository.
-
-<!-- template-only:end -->
 
 Run the narrowest check that can fail, then the gate: `pnpm exec vitest run <path>` or
 `--project core` (or `web`, `unit`, `automation`), such as

@@ -1,19 +1,19 @@
 {
-  "name": "my-game",
-  "version": "0.1.1",
+  "name": "beatana",
+  "version": "0.0.0",
   "private": true,
-  "description": "A short description.",
+  "description": "A side-view grid battle browser game where every action is one beat",
   "keywords": [],
   "license": "MIT",
-  "author": "Your Name <you@example.com>",
+  "author": "tomada",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-name/my-game.git"
+    "url": "git+https://github.com/tomada1114/beatana.git"
   },
   "bugs": {
-    "url": "https://github.com/your-name/my-game/issues"
+    "url": "https://github.com/tomada1114/beatana/issues"
   },
-  "homepage": "https://github.com/your-name/my-game#readme",
+  "homepage": "https://github.com/tomada1114/beatana#readme",
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -55,9 +55,7 @@
     "package:crazygames": "node scripts/package-crazygames.mjs",
     "check": "pnpm run check:source && pnpm run budget && pnpm run package:crazygames",
     "fix": "eslint . --fix && prettier --write .",
-    "hooks:install": "lefthook install",
-    "bootstrap:e2e": "node scripts/verify-bootstrap.mjs",
-    "bootstrap:check": "node scripts/verify-bootstrap.mjs --check"
+    "hooks:install": "lefthook install"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

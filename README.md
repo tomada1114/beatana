@@ -1,38 +1,8 @@
-# my-game
+# beatana
 
-[![CI](https://github.com/your-name/my-game/actions/workflows/ci.yml/badge.svg)](https://github.com/your-name/my-game/actions/workflows/ci.yml)
+[![CI](https://github.com/tomada1114/beatana/actions/workflows/ci.yml/badge.svg)](https://github.com/tomada1114/beatana/actions/workflows/ci.yml)
 
-A short description.
-
-<!-- template-only:start -->
-
-## Use this template
-
-This is a GitHub template for small deterministic 2D browser games in TypeScript (Vite
-8, Phaser 4, the CrazyGames HTML5 SDK v3), built mostly by coding agents. A repository
-cut from it starts with a playable sample game; once CLAUDE.md's `## Product` is
-written, every gate is green (the Product-section test fails until then).
-
-Create a repository with GitHub's **Use this template** button, then run the interactive
-bootstrap before installing dependencies:
-
-```sh
-node scripts/bootstrap.mjs
-```
-
-Answer the prompts for the game slug, display title, author, GitHub user, license, and
-description. For automation, pass the slug and the flags instead:
-
-```sh
-node scripts/bootstrap.mjs <slug> --title "<Game Name>" --author "<Author>" \
-  --github-user <user> --license MIT
-```
-
-Use `--dry-run` to preview changes and `--help` for the complete command syntax.
-Bootstrap removes this section from the generated repository; the `starting-an-app`
-skill covers the work that follows.
-
-<!-- template-only:end -->
+A side-view grid battle browser game where every action is one beat
 
 ## Quickstart
 
@@ -92,4 +62,4 @@ the skills under [`.claude/skills/`](.claude/skills/), such as
 
 ## License
 
-[MIT](LICENSE) © Your Name
+[MIT](LICENSE) © tomada

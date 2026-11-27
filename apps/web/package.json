@@ -1,10 +1,10 @@
 {
-  "name": "@my-game/web",
+  "name": "@beatana/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@my-game/core": "workspace:*",
+    "@beatana/core": "workspace:*",
     "phaser": "^4.2.1"
   },
   "devDependencies": {

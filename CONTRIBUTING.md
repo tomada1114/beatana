@@ -59,17 +59,6 @@ hook call these same scripts and define no check of their own.
 A behavior change lands with its test in the same commit, and the test is written first:
 a test that has never failed has not shown that it can.
 
-<!-- template-only:start -->
-
-### Bootstrap
-
-`scripts/bootstrap.mjs` renames the template for a generated repository, once. Use
-`pnpm bootstrap:e2e` for a fast transformation check. Before changing the template's
-generation contract, run `pnpm bootstrap:check`: it generates a repository, installs its
-frozen lockfile, and runs its full gate. A failed generated repository is retained in
-the reported temporary directory.
-<!-- template-only:end -->
-
 ### Dependency cooldown
 
 The seven-day dependency cooldown in `pnpm-workspace.yaml` is fail-closed. If an urgent
