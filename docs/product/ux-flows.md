@@ -1,129 +1,246 @@
-# Web Game Template — UX flows (sample game)
+# Beatana — UX flows
 
-Screens of the sample game the template ships. Each game replaces them; they exist so a
-generated repository shows the scene pattern, the platform events, and the first-minute
-rule working end to end. App-wide UX policy is in `docs/design/ux-guidelines.md`.
+Screens and the flow between them. Product behaviour is in
+`docs/product/requirements.md` (cited as §); app-wide UX policy is in
+`docs/design/ux-guidelines.md` and is not restated here.
 
-Design size 720×1280 (portrait), `Scale.FIT`. In landscape the canvas is centered with
-the background colour on both sides.
+Design size 720×1280 (portrait), `Scale.FIT`. In landscape the canvas is centred with
+the background colour on both sides. Every control is at least 88×88 design pixels.
+
+## Screen inventory
+
+| #   | Screen                   | Serves                             |
+| --- | ------------------------ | ---------------------------------- |
+| 1   | Boot                     | asset loading (§3.6)               |
+| 2   | Title                    | modes (§3.7), credits entry (§3.6) |
+| 3   | Weapon select            | main weapon (§3.5)                 |
+| 4   | Battle                   | §3.1–§3.3                          |
+| 5   | Pick (overlay on Battle) | §3.5                               |
+| 6   | Interlude                | run (§3.4), build review (§3.5)    |
+| 7   | Result                   | score (§3.7)                       |
+| 8   | Credits                  | asset attribution (§3.6)           |
 
 ## Flow
 
 ```
-            ┌──────────┐  assets ready   ┌──────────┐
-  load ───▶ │   Boot   │ ──────────────▶ │  Title   │ ◀───────────────┐
-            └──────────┘ loadingStart →  └──────────┘                 │
-                         loadingStop       │ Daily     │ Practice     │
-                                           ▼           ▼              │
-                                      ┌─────────────────────┐         │
-                                      │        Play         │         │
-                                      │ gameplayStart       │         │
-                                      └─────────────────────┘         │
-                              solved or limit reached │  Back (Esc)   │
-                                      ▼               └──── gameplayStop
-                                 ┌──────────┐                         │
-                                 │  Result  │ gameplayStop            │
-                                 │ happytime│ (new Daily best only)   │
-                                 └──────────┘                         │
-                                   │ Again (same board) ─▶ Play       │
-                                   │ Practice ─────────▶ Play (new seed)
-                                   └ Title ───────────────────────────┘
+ load ─▶ [Boot] ─▶ [Title] ──Credits──▶ [Credits] ──Back──▶ [Title]
+                     │ Daily / Practice
+                     ▼
+              [Weapon select] ──Back──▶ [Title]
+                     │ choose
+                     ▼
+        ┌────▶ [Battle n/5] ◀──────────────┐
+        │        │      │ gauge reaches 10 │
+        │        │      └──▶ [Pick] ───────┘ take 1 (or reroll, then take 1)
+        │        │ all enemies down
+        │        ├── n < 5 ──▶ [Interlude] ──Continue──┐
+        │        │                                     │
+        └────────┼─────────────────────────────────────┘
+                 ├── n = 5 (boss down) ──▶ [Result: Cleared]
+                 └── player at 0 health ─▶ [Result: Fallen]
+   Battle / Interlude ──Pause──▶ Resume | Give up ──▶ [Title] (run discarded)
+   [Result] ── Again (same seed, back to Weapon select) | Practice (new seed) | Title
 ```
 
-Before any scene: `apps/web/src/main.ts` awaits `selectPlatform()` and `init()` with a
-10 s timeout (on failure or timeout it falls back to local, shows the player nothing and
-logs one `console.warn`), and only then creates the `Phaser.Game`.
+Platform events follow the template: `gameplayStart` when Battle 1 becomes playable,
+`gameplayStop` on entering Result or giving up; none between battles.
 
-Events: `loadingStart` when Boot's preload starts; `loadingStop` once, when Title first
-becomes interactive; `gameplayStart` each time a board becomes playable (Daily,
-Practice, Again); `gameplayStop` on entering Result and on Back from Play, never twice
-in a row. Leaving Result for Title sends nothing. Never on tab blur — the portal handles
-that.
-
-## Boot
+## 1. Boot
 
 ```
 ┌───────────────────────────┐
 │                           │
-│                           │
-│        GAME NAME          │
-│        ▓▓▓▓▓▓░░░░         │  progress bar, 0–100 %
-│                           │
+│         BEATANA           │
+│        ▓▓▓▓▓▓░░░░         │  progress 0–100 %
 │                           │
 └───────────────────────────┘
 ```
 
-- Empty/loading: progress bar only. The sample has no image assets, so Boot normally
-  lasts under one frame; the bar exists for games that add assets.
-- Error: if a required asset fails, show "Couldn't load. Tap to retry." and retry the
-  loader on a tap, Enter or Space.
+- Loading: the bar. Sprites are image files, so Boot is visible on a slow connection.
+- Error: "Couldn't load. Tap to retry." — a tap, Enter or Space retries the loader.
 
-## Title
+## 2. Title
 
 ```
 ┌───────────────────────────┐
-│        GAME NAME          │
-│   Daily · 2026-11-05      │  UTC day
-│   Best today: 14          │  hidden when none / storage unavailable
-│                           │
+│         BEATANA           │
+│   Daily · 2026-11-26      │  UTC day
+│   Best today: 187         │  hidden when none or storage unavailable
 │   ┌───────────────────┐   │
-│   │   Play daily      │   │  primary, focused by default (Enter)
+│   │    Play daily     │   │  primary, focused by default
 │   └───────────────────┘   │
 │   ┌───────────────────┐   │
-│   │   Practice        │   │  secondary
+│   │     Practice      │   │
 │   └───────────────────┘   │
-│                           │
-│   One line of how to play │
+│          Credits          │
+│ Each action is one beat.  │  one line of how to play
 └───────────────────────────┘
 ```
 
-- `document.body.dataset.ready = "true"` is set when this scene accepts input.
-- The UTC day is computed once, when Title first opens in the session, and stays fixed
-  for the session (no rollover past midnight); the best line and key use that day.
-- Keyboard: Up/Down moves focus between the two buttons, Enter/Space activates.
+- Keyboard: Up/Down moves focus across the three buttons; Enter/Space activates.
 
-## Play
+## 3. Weapon select
 
 ```
 ┌───────────────────────────┐
-│ ← Back      Moves 3 / 20  │  Back = Esc
-│                           │
-│   ● ▲ ■ ◆ ●               │
-│   ▲ ▲ ■ ● ◆               │  5×5 tiles, colour + glyph
-│   ■ ● [◆] ▲ ■             │  [ ] = keyboard cursor
-│   ◆ ■ ▲ ● ▲               │
-│   ● ◆ ■ ▲ ●               │
-│                           │
-│  Make every tile the same │
+│ ← Back     Choose a weapon│
+│ ┌───────────────────────┐ │
+│ │ [sprite] Blade        │ │  focused by default
+│ │ Stronger the closer   │ │
+│ │ you stand: 1 / 2 / 3  │ │
+│ └───────────────────────┘ │
+│ ┌───────────────────────┐ │
+│ │ [sprite] Spear        │ │
+│ │ Pierces 2. Charge +3  │ │
+│ └───────────────────────┘ │
+│ ┌───────────────────────┐ │
+│ │ [sprite] Short blade  │ │
+│ │ Parry counter 6       │ │
+│ └───────────────────────┘ │
+│        [ Start run ]      │
 └───────────────────────────┘
 ```
 
-- Tap/click a tile, or move the cursor with arrow keys and press Enter/Space: the tile
-  and its orthogonal neighbours advance one kind; a 120 ms tween shows the change.
-- The move count is mirrored as an integer in text into `#debug-moves`, present in every
-  build, `aria-hidden="true"` and visually hidden, so the smoke test can read it;
-  `body[data-scene="play"]` marks that Play accepts keys.
-- Board solved or move limit reached → Result after a 300 ms pause.
+- Tapping a card selects it; Start run begins Battle 1. Keyboard: Up/Down selects, Enter
+  starts, Esc goes back.
+- In Daily, the weapon is the player's choice; the seed fixes line-ups and offers only.
 
-## Result
+## 4. Battle
+
+```
+┌─────────────────────────────────────┐
+│ ⏸   Battle 2/5            Score 64  │  ⏸ = Esc
+│                                     │
+│        ⚔2        ↷1       …         │  intent above each enemy: attack /
+│  ┌───┬───┬───┬───┬───┬───┬───┐      │  move / pause, with beats left
+│  │   │   │ 2 │ ░ │   │ E │   │      │  7×3 cells of 96×96
+│  ├───┼───┼───┼───┼───┼───┼───┤      │  digits = beats until an attack
+│  │ 1 │ P │ 1 │ ░ │ E │   │   │      │  lands on that cell
+│  ├───┼───┼───┼───┼───┼───┼───┤      │  ░ = neutral column
+│  │   │   │   │ ░ │   │   │ E │      │  enemy health bar under each E
+│  └───┴───┴───┴───┴───┴───┴───┘      │
+│  Health ██████░░░░ 6/10             │
+│  Spirit ███████░░░ 7/10   Charge ●●○│
+│  [Blade 2] [Stars 1] [ — ] [ — ]    │  main weapon + 3 sub-weapon slots
+│  [Lunge 1] [ — ] [ — ]              │  3 art slots, each with its level
+│                                     │
+│      ┌───┐            ┌─────┬─────┐ │
+│  ┌───┼ ▲ ┼───┐        │Strike│Charge│
+│  │ ◀ │   │ ▶ │        ├─────┼─────┤ │  each action button 120×120
+│  └───┼ ▼ ┼───┘        │Parry │ Wait│ │  d-pad arms 96×96
+│      └───┘            └─────┴─────┘ │
+└─────────────────────────────────────┘
+```
+
+| Action | Touch  | Keyboard   |
+| ------ | ------ | ---------- |
+| Move   | d-pad  | arrow keys |
+| Strike | Strike | Z          |
+| Charge | Charge | X          |
+| Parry  | Parry  | C          |
+| Wait   | Wait   | Space      |
+| Pause  | ⏸      | Esc        |
+
+- One input is one beat: the player's action resolves, sub-weapons due this beat fire,
+  then every enemy advances, in that order, and the next input is accepted when the
+  beat's animation ends.
+- A cell with an attack landing on the next beat is drawn in the danger colour with "1";
+  standing on it, Parry is highlighted.
+- A sub-weapon slot shows the beats until it next fires.
+- A move that would leave the territory does nothing and spends no beat (§3.1).
+- First battle of the first run on a device: three one-line hints appear in turn above
+  the controls ("Numbers show when an attack lands", "Stand closer to hit harder",
+  "Parry on 1 to counter"); each disappears after the action it describes is used.
+- Pause panel: Resume (focused), Give up. Give up asks "Give up this run?" — Yes / No.
+- Enemies all down → 300 ms pause → Interlude, or Result after battle 5. Player at 0
+  health → 300 ms pause → Result.
+
+## 5. Pick (overlay)
+
+```
+┌─────────────────────────────────────┐
+│   (battle dimmed behind)            │
+│            Choose one               │
+│ ┌─────────────────────────────────┐ │
+│ │ NEW  Throwing stars             │ │  1
+│ │ Every 3 beats, 1 damage in row  │ │
+│ └─────────────────────────────────┘ │
+│ ┌─────────────────────────────────┐ │
+│ │ Lv 2 → 3  Lunge                 │ │  2
+│ │ Front-column strike +1          │ │
+│ └─────────────────────────────────┘ │
+│ ┌─────────────────────────────────┐ │
+│ │ FUSION  Draw cut                │ │  3
+│ │ Blade 3 + Lunge                 │ │
+│ └─────────────────────────────────┘ │
+│        [ Reroll · 2 left ]          │
+└─────────────────────────────────────┘
+```
+
+- Opens between beats when the gauge reaches 10; no beat passes while it is open.
+- Tapping a card takes it. Keyboard: 1/2/3 or Up/Down + Enter; R rerolls.
+- Each card is tagged NEW, Lv a → b, or FUSION, and a fusion names its two parts.
+- Reroll at 0 left is shown disabled. Esc does nothing here: a pick cannot be skipped.
+- Nothing left to offer: a single card "+1 health" (§3.5).
+- If the gauge passes 10 twice in one beat, the picks open one after the other.
+
+## 6. Interlude
 
 ```
 ┌───────────────────────────┐
-│        Solved! / Out of moves
-│        Score 14/20        │
-│        New best!          │  Daily only, when the stored best increased
+│ ⏸     Battle 2 cleared    │
+│   Health 6/10   Score 64  │
+│   Next: battle 3/5        │
+│   [E] Archer  [E] Charger │  line-up of the next battle
 │                           │
-│   ┌───────────────────┐   │
-│   │   Copy result     │   │  Daily only; share text to clipboard
-│   └───────────────────┘   │
-│   Again    Practice   Title
+│   Your build              │
+│   Blade 2 · Stars 1       │
+│   Lunge 1                 │
+│ ┌───────────────────────┐ │
+│ │       Continue        │ │  focused; Enter/Space
+│ └───────────────────────┘ │
 └───────────────────────────┘
 ```
 
-- Copy result: Clipboard API; on failure, show the text in a selectable box.
-- "Again" replays the same seed; "Practice" starts a new random seed.
-- Score: `moveLimit + 1 - movesUsed` (1–20) when solved, 0 when out of moves.
-- Practice Result shows the score with Again, Practice and Title only: no best line, no
-  "New best!", no Copy result, no `happytime`.
-- Keyboard focus order: Copy result (Daily only), Again, Practice, Title.
-- Choosing Title sends no platform event.
+- Before battle 5 the line-up reads "Boss".
+- Tapping a build item shows its description in a one-line strip under the list.
+
+## 7. Result
+
+```
+┌───────────────────────────┐
+│     Cleared! / Fallen     │
+│     Score 187             │
+│     Spirit 127 + Health 60│  health bonus on a clear only
+│     New best!             │  Daily only, when the stored best rose
+│     Reached battle 4/5    │  on Fallen only
+│   Blade 3 · Stars 3 · …   │  final build
+│ ┌───────────────────────┐ │
+│ │     Copy result       │ │  Daily only
+│ └───────────────────────┘ │
+│   Again   Practice  Title │
+└───────────────────────────┘
+```
+
+- Share text (Daily): `Beatana 2026-11-26 — 187 — Blade / Stars / Lunge`. Clipboard
+  failure: the text is shown in a selectable box.
+- Again returns to Weapon select with the same seed; Practice with a new seed.
+- Practice shows no best line, no "New best!" and no Copy result.
+- Focus order: Copy result (Daily only), Again, Practice, Title.
+
+## 8. Credits
+
+```
+┌───────────────────────────┐
+│ ← Back         Credits    │
+│ Sprites                   │
+│  <asset> — <author>       │
+│  <licence> · <source>     │  one entry per asset pack; scrolls
+│ Code                      │
+│  Beatana, <year>          │
+└───────────────────────────┘
+```
+
+- Up/Down or drag scrolls; Esc or Back returns to Title.
+- The list is generated from the repository's credits file, so the two cannot differ.
+- No assets needing credit: the Sprites heading is omitted.

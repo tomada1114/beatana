@@ -1,60 +1,130 @@
-# Web Game Template — UX guidelines
+# Beatana — UX guidelines
 
-App-wide UX rules every game cut from the template starts with. Screens are in
-`docs/product/ux-flows.md`; colours and type are in `docs/design/design-direction.md`
-and the `designing-ui` skill.
+|           |                                                                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Product   | Beatana                                                                                                                                   |
+| Platforms | Web: desktop and mobile browsers, Phaser 4 canvas, 720×1280 portrait                                                                      |
+| App type  | Single-player turn-stepped game                                                                                                           |
+| Related   | Requirements: `docs/product/requirements.md` · UX flows: `docs/product/ux-flows.md` · Design direction: `docs/design/design-direction.md` |
+
+Rules the template already fixes and this game keeps unchanged are marked (template).
+
+## Principles
+
+- **The board never lies** — everything that will hurt the player is on screen before it
+  lands. Decides: an enemy effect with no announcement is a bug, not a difficulty knob.
+  Gives up: surprise attacks.
+- **Speed belongs to the player** — nothing advances without an input, and the game
+  never makes a fast player wait. Decides: animations are short and one input is
+  buffered. Gives up: long, showy attack animations.
+- **Risk is felt** — strong feedback is reserved for risky actions. Decides: only a
+  full-charge hit, a parry counter and taking damage shake the screen. Gives up: impact
+  on every ordinary hit.
 
 ## First minute
 
-- Gameplay is reachable in at most two taps from load (Title → Play).
-- No blocking tutorial or modal. One line of instruction on Title and one on Play.
-- Load to interactive Title in under 10 seconds on a mid-range phone (the template's own
-  target).
+- Battle is reachable in two taps from Title: a mode, then Start run with Blade
+  preselected.
+- No blocking tutorial or modal (template). The first battle's hints sit above the
+  controls and never stop input.
 
 ## Input
 
-- Every action works with pointer (mouse and touch) and with the keyboard.
-- Tap targets are at least 88×88 design pixels (`layout.tapMin`) (44 CSS px at the
-  720-wide design size scaled to a 360-px-wide phone).
-- No drag, long-press, double-tap, or hover-only affordance in the template; a game that
-  adds one also adds a keyboard path.
-- `user-select: none` on `body`; `touch-action: none` on the canvas.
+- Every action works with pointer and keyboard; tap targets ≥ 88×88 design pixels; no
+  drag (except scrolling Credits, which also scrolls with Up/Down), long-press,
+  double-tap or hover-only affordance (template).
+- One input is one beat. While a beat animates, at most one further input is buffered
+  and played when the animation ends; later presses in the same animation replace the
+  buffered one. Why: mashing stays responsive without queuing moves the player no longer
+  wants.
+- The buffer is cleared when a Pick opens, a battle ends or the pause panel opens, so a
+  stray press never takes an upgrade or an action in the next battle.
+- Holding a key or button does not repeat. Why: every beat is a decision.
+- A Pick accepts input 250 ms after it opens. Why: it can open in the middle of fast
+  play.
 
 ## Feedback
 
-- A valid move animates within one frame: 120 ms tween, ease-out.
-- An invalid input (outside the board, after the game ended) does nothing visible; no
-  error sound or shake in the template.
-- Score and move counts update in the same frame as the move.
-- Transitions between scenes: 150 ms fade; never longer than 300 ms.
-- A finished board waits 300 ms (`layout.resultPauseMs`) before Result. That is a pause
-  on the final board, not a transition; the fade into Result stays 150 ms.
+| Event                                                    | Feedback                                                                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Player action                                            | 120 ms, ease-out                                                                                       |
+| Enemy and sub-weapon actions                             | 120 ms, starting 80 ms after the player's; a beat lasts about 200 ms                                   |
+| Any hit                                                  | Target flashes white for 60 ms; a damage number rises 24 px and fades in 400 ms without blocking input |
+| Full-charge hit, parry counter, player hit               | Camera shake 4 px for 120 ms, on top of the flash                                                      |
+| Spirit gained                                            | "+n" beside the gauge; the gauge fills in the same beat                                                |
+| Invalid input (off the territory, during a result pause) | Nothing visible, no beat spent (template)                                                              |
+| Scene change                                             | 150 ms fade, never longer than 300 ms (template)                                                       |
+| Battle end                                               | 300 ms pause on the final board, then the fade (template)                                              |
+
+- Health, score, gauge and sub-weapon counters update in the same beat as their cause.
+
+## Announced attacks
+
+| Beats until landing | Cell shows                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 2 or more           | Outline in the danger colour and the digit                                                                    |
+| 1                   | Diagonal hatching over the cell, the digit "1", and the Parry button highlighted when the player stands there |
+
+- Urgency is carried by the digit and the pattern; colour only reinforces it.
+- An enemy's intent mark (attack, move, pause) is an icon with a digit, never colour
+  alone.
+
+## Motion
+
+- With `prefers-reduced-motion: reduce`, the camera shake and the white flash are
+  omitted and scene fades become cuts; damage numbers, digits and patterns stay. Why:
+  they carry information, the shake and flash carry only impact.
+- No element flashes more than 3 times per second.
+- There is no speed setting. Why: one tuned speed with a buffer was chosen over a
+  setting that needs storage and a screen.
 
 ## State and errors
 
-- Storage may be unavailable (private mode, blocked iframe storage). The game never
-  shows an error for it; it hides "Best" and keeps playing.
-- The portal SDK may fail to load or `init()` may not settle within 10 s. The game falls
-  back to the local platform, shows the player nothing, and logs one `console.warn`.
-- Leaving and returning to the tab resumes the same board; nothing is reset by
-  visibility changes.
+- Storage unavailable: the best line is hidden and play continues; no error (template).
+- Asset load failure: Boot's retry prompt; no other screen can hit it.
+- Leaving and returning to the tab keeps the run exactly where it was (template).
+  Reloading or closing the tab ends the run (requirements §3.7).
+- Giving up a run is the only destructive action and the only confirmation.
 
 ## Audio
 
-- The template has no sound. A game that adds sound honours the portal mute setting
-  (CrazyGames `SDK.game.settings.muteAudio`, https://docs.crazygames.com/sdk/game/,
-  checked 2026-11-05) over its own toggle, and resumes a suspended `AudioContext` inside
-  a user gesture (iOS; https://docs.crazygames.com/requirements/technical/, checked
-  2026-11-05).
+- No sound in the MVP. When sound is added, the template's mute and `AudioContext` rules
+  apply.
 
 ## Accessibility
 
-- Colour is never the only signal: each tile kind has a glyph.
-- Text contrast ≥ 4.5:1 against its background; tiles and controls ≥ 3:1.
-- Focus is always visible when the keyboard is used: a 2 px accent ring drawn 4 px
-  outside the tile or button, on `surface` (accent/surface 6.82:1).
+- Text contrast ≥ 4.5:1; board cells, intent marks, gauges and controls ≥ 3:1. Measured
+  values are in the design direction.
+- Keyboard focus is always visible: a 2 px ring, 4 px outside the control (template).
+- Sprites are identified by silhouette and a name label on Weapon select, Pick and
+  Interlude, never by colour alone.
 
 ## Copy
 
-- English, sentence case, short verbs ("Play daily", "Copy result").
-- Numbers as digits; dates as `YYYY-MM-DD` (UTC).
+- UI text is Japanese only; no language switch. Why: the players are the owner and
+  friends. Code, comments and documents stay English.
+- The labels in the UX flows give each string's meaning in English; the shipped strings
+  are their Japanese equivalents, kept in one strings module so a second language can be
+  added later without touching scenes.
+- Text is drawn with the device's system Japanese font, not a pixel font. Open: a
+  redistributable Japanese pixel font — settled with the design direction.
+- Short labels, no sentence-ending punctuation on buttons; numbers as digits; dates as
+  `YYYY-MM-DD` (UTC).
+- An item description fits two lines of the Pick card at the body size; longer effects
+  are split across levels rather than abbreviated.
+
+## Open items
+
+- Japanese pixel font — the design direction decides whether one with a compatible
+  licence is used.
+
+## Decision log
+
+| Date       | Decided                                                                                           | Rejected                                      | Why                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------- |
+| 2026-11-27 | Japanese-only UI                                                                                  | English only; both with a switch              | Players read Japanese; two languages double every string from day one |
+| 2026-11-27 | ~200 ms beat with a one-input buffer                                                              | ~400 ms sequential beat; a speed setting      | Keeps fast play fast; no settings storage or screen                   |
+| 2026-11-27 | Flash and number on every hit, shake on risky hits and damage taken; omitted under reduced motion | Numbers only; shake and hit-stop on every hit | Rewards risk without constant shaking once sub-weapons fire           |
+| 2026-11-27 | Danger shown by digit plus pattern                                                                | Digit and colour depth only                   | Urgency readable without colour                                       |
+| 2026-11-27 | Touch: d-pad plus four action buttons                                                             | Tap a cell to move; swipe                     | Thumbs stay off the board; the template rules out swipe-only input    |
+| 2026-11-27 | Enemy intent marks above enemies                                                                  | Cell announcements only                       | Lets the player plan a charge or parry                                |

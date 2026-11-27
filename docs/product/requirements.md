@@ -1,236 +1,235 @@
-# Web Game Template — Requirements
+# Beatana — Requirements
 
-- **Status:** Signed off 2026-11-05 (details delegated by the owner:
-  "細かいことはできるだけ任せる")
-- **Platform and stack:** Web (desktop and mobile browsers, inside portal iframes). Cut
-  from `tomada1114/typescript-template`, which fixes TypeScript, Node 24, pnpm 11 via
-  Corepack, ESLint, Prettier, Vitest, lefthook and the pnpm supply-chain settings. This
-  template adds Vite 8, Phaser 4 and the CrazyGames HTML5 SDK v3.
+- **Status:** Signed off 2026-11-26 (values in §3 are starting points, tuned by the
+  first playable build)
+- **Platform and stack:** Web (desktop and mobile browsers). Cut from
+  `tomada1114/web-game-template`, which fixes TypeScript, Node 24, pnpm 11, Vite 8,
+  Phaser 4, a deterministic integer-only `packages/core` (seed + moves replay), a
+  720×1280 portrait canvas, pointer and keyboard parity, and the Boot → Title → Play →
+  Result scene flow.
 
 ## 1. Overview
 
-A GitHub template repository for small 2D browser games written in TypeScript and built
-mostly by coding agents. A repository cut from it starts with a playable sample game,
-the checks a game needs, and the agent harness (skills, issue conventions,
-`shipping-issues`) — so the first issue of a new game is about the game, not the setup.
+Beatana is a side-view grid battle game for one player. Time moves only when the player
+acts: every action is one beat, and every enemy advances one beat with it. Enemy attacks
+are announced on the cells they will hit, so a fight is a string of small bets — stand
+closer, charge longer, or stay in the announced cell and parry — where more risk pays
+more. A play is a short run of battles ending in a boss, with one upgrade chosen after
+each win, so each run grows into a different fighting style.
 
-- **Target user:** one solo developer with web-app experience and little game
-  experience, 3–6 hours a week, publishing free games on browser portals (CrazyGames
-  first), later adding a server-verified daily challenge and an iOS build.
-- **Core interaction:** cut a repository → run the bootstrap → `pnpm dev` shows the
-  sample in the browser → change the rules in `packages/core` with tests → `pnpm build`
-  and `pnpm package:crazygames` produce a zip ready to upload.
-- **The constraint everything follows:** game rules are deterministic. The same seed and
-  the same list of moves give the same state and score on every JavaScript engine (V8,
-  JavaScriptCore, SpiderMonkey), so a later server can replay a run to verify it and
-  every player gets the same daily board.
+- **Target user:** the owner and friends; a non-commercial personal project.
+- **Core interaction:** read the announced attacks, then spend one beat on move, strike,
+  charge, parry or wait.
+- **Originality rule:** every name, term, sprite, sound and screen layout is the game's
+  own. No vocabulary, characters or look from an existing game.
 
 ## 2. Scope
 
 ### MVP
 
-- **Workspace layout** — `packages/core` (rules) and `apps/web` (rendering and
-  platform), so the rules can later run in a Worker without the renderer (§3.1).
-- **Deterministic core with a sample game** — seeded PRNG, seed derivation, daily seed,
-  replay, and a tiny sample ruleset that exercises all of them (§3.2).
-- **Determinism guard** — lint rules that keep non-deterministic APIs out of
-  `packages/core`, plus golden tests (§3.3).
-- **Web shell** — Phaser 4 scenes Boot → Title → Play → Result rendering the core state
-  (§3.4).
-- **Platform adapter** — a `Platform` interface with `local` and `crazygames`
-  implementations, chosen at build time (§3.5).
-- **Daily mode** — the sample's daily board, local best score, and a share text (§3.6).
-- **Build, budget and portal package** — a relative-path build, a size budget that fails
-  the gate, and a CrazyGames zip (§3.7).
-- **Release workflow** — a version tag builds the zip and attaches it to a GitHub
-  Release (§3.8).
-- **Boot smoke test** — the built game boots in a real browser without console errors
-  and accepts one move (§3.9).
-- **Game bootstrap and agent harness** — a bootstrap that renames the template into a
-  game, an `AGENTS.md` Product section placeholder that fails the checks until written,
-  and the skills a kickoff expects: `starting-an-app`, `designing-ui`,
-  `triaging-issues`, `shipping-issues` (§3.10).
+- **Beat-step battle** — the core interaction (§3.1).
+- **Three risk axes: distance, charge, parry** — what replaces a chip or deck system
+  (§3.2).
+- **Enemies with announced attacks** — 4 kinds and 1 boss (§3.3).
+- **Run of 5 battles** — 4 battles then the boss, health carried over (§3.4).
+- **Build** — a main weapon chosen at the start, automatic sub-weapons, passive arts,
+  levels and fusions, earned by taking risks (§3.5).
+- **Pixel-art presentation** — provisional ninja/samurai theme from free assets (§3.6).
 
 ### Later
 
-- **Replay-verification server** (`apps/worker`, Cloudflare Workers + D1) — waits until
-  a game gets traction on a portal; `packages/core` is already importable by it.
-- **iOS build** (Capacitor 8 wrapping `apps/web`) — same trigger.
-- **Cross-engine determinism run** — golden tests in Chromium, WebKit and Firefox
-  (Vitest browser mode or Playwright); pulled forward if a golden test ever differs
-  between Node and a browser.
-- **Poki adapter** — added only when a game is accepted there.
-- **Audio** — a mute-aware sound helper (CrazyGames Full Launch requires honoring
-  `muteAudio`, https://docs.crazygames.com/sdk/game/, checked 2026-11-05); pulled
-  forward by the first game that ships sound.
-- **Localization** — sample UI is English only.
+- **Beat timer** — an `apps/web` clock that plays "wait" when the player is slow, for a
+  real-time feel; waits until the untimed game is fun. Core does not change.
+- **More content** — 8-battle runs, a mid-boss, 20+ upgrades; waits until the 12-upgrade
+  set shows which builds are fun.
+- **Audio** — the template defers its sound helper to the first game that ships sound.
 
 ### Non-goals
 
-- 3D, physics engines, real-time multiplayer — they break determinism or the scope a
-  solo hobby game can carry.
-- npm publishing — a game is not a package; the template's npm release, provenance,
-  type-export and package-smoke machinery is removed, not kept dormant.
-- Ads and monetization calls — CrazyGames Basic Launch does not allow ads; a game adds
-  them at Full Launch (https://docs.crazygames.com/requirements/technical/, checked
-  2026-11-05).
-- Accounts, login, analytics, or any network request other than the portal SDK.
-- Asset pipelines (texture atlases, sprite tooling), level editors, ECS frameworks.
-- Other engines (Unity, Godot, PixiJS) — the template is Phaser-only; the core stays
-  engine-free so a renderer swap stays possible.
+- A chip, card or deck system — the owner ruled it out.
+- Random hit, miss or damage rolls, and attacks that land unannounced — enemies choose
+  at random, but what they chose is always shown before it lands.
+- Real-time (clock-driven) rules in `packages/core`.
+- Multiplayer, accounts, a server, monetization.
+- A story mode or overworld; the game is battles and the choices between them.
 
 ## 3. Features
 
-### 3.1 Workspace layout
+### 3.1 Beat-step battle
 
-| Item            | Specification                                                                                                                                                                                                                                                                            |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Package manager | pnpm workspace, `packages: ["packages/*", "apps/*"]`, supply-chain settings kept as they are                                                                                                                                                                                             |
-| `packages/core` | ESM TypeScript, no runtime dependencies, compiled with `types: []` (no DOM, no Node)                                                                                                                                                                                                     |
-| `apps/web`      | Vite 8 app; depends on `@<scope>/core` via `workspace:*`; Phaser 4 is its only runtime dependency besides core                                                                                                                                                                           |
-| Root scripts    | `dev`, `build`, `test`, `test:coverage`, `lint`, `typecheck`, `format:check`, `check:quick`, `check:source`, `check`, `fix`, `budget`, `package:crazygames`, `test:e2e`, `e2e:browsers`, `agents:sync`, `agents:check`, `repo:labels`; template only: `bootstrap:e2e`, `bootstrap:check` |
-| Node            | 24 for development and CI (unchanged); no published engines floor                                                                                                                                                                                                                        |
-| Coverage floors | `packages/core` 95 %; `apps/web` 80 %, excluding `src/main.ts` and `src/scenes/**` (the e2e smoke covers them) and `src/platform/dom-loader.ts` (the untested default script loader)                                                                                                     |
+| Item         | Specification                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------- |
+| Board        | 7 columns × 3 rows: player territory columns 1–3, neutral column 4, enemy territory columns 5–7 |
+| Movement     | One cell up, down, forward or back per beat, inside the own territory only                      |
+| Beat         | One player action (move, strike, charge, parry, wait), then every enemy advances one beat       |
+| Announcement | A cell an enemy attack will hit shows the number of beats until it lands                        |
+| End          | Win when every enemy is at 0 health; lose when the player is                                    |
 
-### 3.2 Deterministic core and sample game
+- An action that cannot be done (moving off the territory) does nothing and spends no
+  beat.
 
-| Item            | Specification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PRNG            | 32-bit integer generator (operators `Math.imul`, `<<`, `>>>`, `>>`, `\|`, `&`, `^`, `+`, `-`, `\|0` only); one generator for the whole template                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Seed derivation | `seedFrom(text: string): number` — a 32-bit hash of UTF-16 code units                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Daily seed      | `dailySeed(dayUtc: "YYYY-MM-DD", salt: string)`; the day is computed in UTC by `apps/web`, never in core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| API shape       | `createGame(seed, config) → State`, `applyMove(state, move) → State` (pure, no mutation), `isOver(state)`, `score(state)`, `replay(record) → { state, score }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| State           | plain JSON-serializable data (integers, arrays, strings); no classes, no `Map`, no floats                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Replay record   | `{ v: 1, seed: number, config: {...}, moves: Move[] }` — `v` is bumped whenever a rule change alters results; `replay` rejects a record whose `config` differs from `SAMPLE_CONFIG` (`ERR_CONFIG_MISMATCH`): the rules version decides the config, the record does not                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Sample ruleset  | 5×5 board, 4 tile kinds; a move picks a cell and advances the kind of that cell and its orthogonal neighbours by one (mod 4); the board is solved when all cells share one kind; the move limit is 20; score = `moveLimit + 1 - movesUsed` (1–20) when solved, else 0, shown as `<score>/20`. Config `{ size: 5, kinds: 4, moveLimit: 20, scrambleMin: 6, scrambleMax: 10 }` (`SAMPLE_CONFIG`, carried in the replay record). The start board: from a uniform board of kind 0, draw `n = scrambleMin + nextInt(scrambleMax - scrambleMin + 1)`, then `n` cells with `nextInt(size*size)`, and apply each as a reverse move (kind minus one, mod 4); if the result is uniform, keep drawing one more reverse move until it is not, where `k` counts these retry draws (in practice `k` is 0); if `n + k` would exceed 20, the retry stops and the whole scramble is redrawn. Pressing the drawn cells forward solves it, so a solution within `n + k ≤ 20` moves always exists, the board is always solvable within the limit of 20, and the start board is never uniform |
+### 3.2 Risk axes
 
-The sample exists to show the pattern and is replaced by each game; its rules are not a
-product decision.
+| Axis     | Reward                                                                 | Risk                                                         |
+| -------- | ---------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Distance | Strike damage rises with the column: back < middle < front             | Front cells are inside more enemy attacks                    |
+| Charge   | Each charged beat (up to 2) raises damage and reach                    | A hit while charging clears the charge                       |
+| Parry    | A parry on the beat an attack lands negates it and counterattacks hard | A parry on any other beat does nothing and the beat is spent |
 
-### 3.3 Determinism guard
+Proposed values, to be confirmed by the owner and then by a first playable build:
 
-| Item           | Specification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lint scope     | `packages/core/src/**`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Forbidden      | `Math.random`, `Date`, `performance`, `crypto`, `setTimeout`/`setInterval`, `Intl`, `window`, `document`, `globalThis`, `localeCompare` (banned through `no-restricted-syntax`), and the `Math` functions ECMA-262 §21.3.2 lets engines approximate (https://tc39.es/ecma262/multipage/numbers-and-dates.html, checked 2026-11-05: `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`, `exp`, `expm1`, `log`, `log1p`, `log2`, `log10`, `pow`, `cbrt`, `hypot`), and the `**` operator |
-| Golden tests   | fixed seeds → exact board snapshot; fixed replay → exact state and score; `dailySeed("2026-11-05", "golden")` → fixed value (goldens use the literal salt `"golden"`). A changed golden value fails CI and needs a `v` bump once a release has shipped; a game that replaces the sample before its first release deletes the sample goldens and keeps `RULES_VERSION = 1`                                                                                                                                                                   |
-| Property tests | for random seeds: `replay(record)` equals folding `applyMove`; `applyMove` never mutates its input                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Item          | Value                                                                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Player health | 10                                                                                                                                    |
+| Strike        | Hits the first enemy in the player's row; damage 1 back, 2 middle, 3 front                                                            |
+| Charge        | +2 damage per charged beat, at most 2 beats; a 2-beat charge pierces every enemy in the row; moving keeps the charge, a hit clears it |
+| Parry         | Negates the attack landing this beat and deals 4 to the attacker                                                                      |
 
-### 3.4 Web shell
+### 3.3 Enemies
 
-| Item         | Specification                                                                                                                                                                                        |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Engine       | Phaser 4 (4.x latest that passes the 7-day release-age policy)                                                                                                                                       |
-| Scenes       | Boot (load; `loadingStart` when its preload starts; retry on tap, Enter or Space), Title (`loadingStop` once, when it first becomes interactive), Play, Result — flows in `docs/product/ux-flows.md` |
-| Startup      | `apps/web/src/main.ts` awaits `selectPlatform()` and `init()` with a 10 s timeout and fallback to `local`, then creates the `Phaser.Game`                                                            |
-| Scaling      | `Scale.FIT`, centered, design size 720×1280 portrait; landscape shows side bars in the background colour                                                                                             |
-| Input        | pointer (mouse and touch) and keyboard (arrow keys + Space/Enter to move a cursor and play)                                                                                                          |
-| Rendering    | shapes and text only (no image assets in the sample); tile colour plus glyph                                                                                                                         |
-| Ready signal | when the Title scene is interactive, set `document.body.dataset.ready = "true"` (used by the smoke test)                                                                                             |
-| Play signal  | while Play accepts keys, `document.body.dataset.scene = "play"`; deleted when the board ends or Play shuts down (used by the smoke test)                                                             |
-| Move mirror  | `#debug-moves` holds the integer move count as text; present in every build, `aria-hidden="true"`, visually hidden                                                                                   |
-| Body CSS     | `user-select: none` with vendor prefixes, `touch-action: none` on the canvas                                                                                                                         |
+4 regular kinds and 1 boss. Enemy behaviour is random within rules the player can learn:
 
-### 3.5 Platform adapter
+- Each kind has 2–3 moves (an attack shape, a step to another cell, a pause). When its
+  cycle comes round it draws one from a weighted table, using the run's seed.
+- A drawn attack is announced on its cells at least 1 beat before it lands; stronger
+  attacks are announced 2–3 beats ahead. Nothing lands unannounced.
+- The same seed and the same player actions give the same enemy choices, so a daily run
+  is the same for everyone who plays it the same way.
 
-| Item         | Specification                                                                                                                                                                                                                                                                                                   |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Interface    | `Platform { init(): Promise<void>; loadingStart(); loadingStop(); gameplayStart(); gameplayStop(); happytime(); isMuted(): boolean; storage: KeyValueStore }`                                                                                                                                                   |
-| Data flag    | `VITE_CRAZYGAMES_DATA=1` maps storage to `SDK.data` in the `crazygames` build (see Storage)                                                                                                                                                                                                                     |
-| Selection    | `VITE_PLATFORM=local\|crazygames` at build time; `local` is the default for `pnpm dev`                                                                                                                                                                                                                          |
-| `local`      | no-op events (logged with `console.debug` in dev only); storage = guarded `localStorage`                                                                                                                                                                                                                        |
-| `crazygames` | loads `https://sdk.crazygames.com/crazygames-sdk-v3.js`, awaits `CrazyGames.SDK.init()`, forwards events to `SDK.game.*`, reads `SDK.game.settings.muteAudio`                                                                                                                                                   |
-| Storage      | `KeyValueStore` = `getItem(key: string): string \| null`, `setItem(key: string, value: string): void`, `removeItem(key: string): void` (the `localStorage` API, never throws); with `VITE_CRAZYGAMES_DATA=1` the `crazygames` platform maps it to `SDK.data` (only when Progress Save is enabled at submission) |
-| Failure      | if the SDK script fails to load, `init()` rejects or does not settle within 10 s, fall back to `local`, keep the game playable, show the player nothing and log one `console.warn`                                                                                                                              |
-| Event rules  | `gameplayStart` each time a board becomes playable; `gameplayStop` on entering Result and on Back from Play, never twice in a row; leaving Result for Title sends nothing; never on tab blur (the portal handles it); `happytime` only when the Daily best increases                                            |
+Proposed set (names provisional; the Attack column is each kind's main move):
 
-### 3.6 Daily mode
+| Enemy          | Health | Attack                                                                                             |
+| -------------- | ------ | -------------------------------------------------------------------------------------------------- |
+| Spearman       | 6      | Every 3 beats, thrusts along its own row                                                           |
+| Archer         | 6      | Every 2 beats, marks the player's current cell; the mark does not follow                           |
+| Powder thrower | 8      | Every 4 beats, a plus-shaped blast of 5 cells                                                      |
+| Charger        | 10     | When the player shares its row, rushes that row 2 beats later                                      |
+| Boss (warlord) | 30     | Cycles the row thrust, the marked cell and the blast; at half health every cycle is 1 beat shorter |
 
-| Item       | Specification                                                                                                                                                                                                                                                                                                                                                                         |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Day        | UTC date computed once, when Title first opens in the session; the board and the best key use it for the whole session, with no rollover past midnight                                                                                                                                                                                                                                |
-| Board      | `createGame(dailySeed(day, "<game-slug>"), config)`                                                                                                                                                                                                                                                                                                                                   |
-| Best score | Daily only; stored per day under `<game-slug>:best:<YYYY-MM-DD>` through `Platform.storage`; a score is a new best when `score > 0` and either no best is stored or `score >` the stored best; 0 is never stored; storage errors are swallowed and the game continues without saving                                                                                                  |
-| Share text | Daily only. Three lines joined by `\n`, no trailing newline: `<GAME_TITLE> <YYYY-MM-DD>`; `<score>/20 · <movesUsed> moves` (unsolved: `0/20 · out of moves`); a 10-glyph bar of `floor(score / 2)` `▰` then `▱` (7 moves → `My Game 2026-11-05\n14/20 · 7 moves\n▰▰▰▰▰▰▰▱▱▱`). Copied with the Clipboard API, falling back to a text box that sets `user-select: text` on itself only |
-| Practice   | a "Practice" board from a random seed (seed chosen in `apps/web`, then passed to core); no best, no `happytime`, no copy button                                                                                                                                                                                                                                                       |
+### 3.4 Run
 
-### 3.7 Build, budget and portal package
+| Item   | Specification                                                 |
+| ------ | ------------------------------------------------------------- |
+| Length | 5 battles: 4 regular, then the boss                           |
+| Health | Carried from battle to battle                                 |
+| Order  | The enemy line-up of each battle is drawn from the run's seed |
+| Loss   | The run ends; the player starts a new run                     |
 
-| Item      | Specification                                                                                                                                                                                                                                                                                                                                                           |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Base path | Vite `base: "./"` — CrazyGames loads files by relative path only (https://docs.crazygames.com/requirements/technical/, checked 2026-11-05)                                                                                                                                                                                                                              |
-| Budget    | `pnpm budget [dir]` (default `apps/web/dist`): sum of the files ≤ 5,242,880 bytes (inclusive) (CrazyGames mobile homepage limit is 20 MB initial download; 5 MB leaves room for a game's assets) and ≤ 300 files (inclusive; portal limit 1500; both limits from https://docs.crazygames.com/requirements/technical/, checked 2026-11-05); the check fails the gate     |
-| Zip       | `pnpm package:crazygames` builds with `VITE_PLATFORM=crazygames` into `.package/crazygames/`, runs the budget on that directory, then writes `.package/<slug>-<version>-crazygames.zip` with `index.html` at the zip root; `<slug>` is the root `package.json` `name`, `<version>` is `apps/web/package.json`'s; `apps/web/dist` (the local build) is never overwritten |
-| Zip check | the zip contains `index.html` at its root, no absolute `src=`/`href=` URLs to the same origin, and no source maps                                                                                                                                                                                                                                                       |
+### 3.5 Upgrades
 
-### 3.8 Release workflow
+The build is what makes one run differ from the next.
 
-| Item     | Specification                                                                                                                                                                                                                                                      |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Trigger  | push of a tag `v*.*.*`                                                                                                                                                                                                                                             |
-| Steps    | install with the frozen lockfile, run `pnpm check` once (it produces the zip through `package:crazygames`), then `gh release create "$TAG" .package/*.zip --generate-notes`; top-level `permissions` stay `{}` or `contents: read`, `contents: write` at job level |
-| Not done | uploading to CrazyGames (manual, through its developer portal)                                                                                                                                                                                                     |
+| Item         | Specification                                                                                                                                               |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spirit gauge | Risky actions fill it: middle-column hit +1, front-column hit +2, full-charge hit +3, successful parry +5. At 10 it empties and a pick opens, between beats |
+| Pick         | 3 options drawn from the seed; the player takes 1. Options are a new item or +1 level of an owned one                                                       |
+| Reroll       | 2 per run; redraws the 3 options                                                                                                                            |
+| Slots        | 1 main weapon, up to 3 sub-weapons, up to 3 arts                                                                                                            |
+| Levels       | Every item has levels 1–3                                                                                                                                   |
+| Fusion       | A level-3 weapon plus its paired art, both owned, becomes a fused weapon at the next pick                                                                   |
 
-### 3.9 Boot smoke test
+- Safe play fills the gauge slowly, so a careful player ends with a thin build and a
+  bold one with a strong build.
+- A pick with nothing left to offer gives 1 health instead.
 
-| Item       | Specification                                                                                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runner     | Playwright (Chromium) against `vite preview` of the `local` build on port 4173 with `strictPort: true`                                                                                          |
-| Assertions | `body[data-ready="true"]` within 10 s; no `console.error`/`pageerror`; starting Practice, waiting for `body[data-scene="play"]`, and pressing Enter once changes `#debug-moves` from `0` to `1` |
-| CI         | runs in the existing CI workflow as its own job                                                                                                                                                 |
+Main weapon — chosen at the start of the run; shapes the manual strike:
 
-### 3.10 Game bootstrap and agent harness
+| Weapon      | Strike                                                                     |
+| ----------- | -------------------------------------------------------------------------- |
+| Blade       | First enemy in the row; 1 / 2 / 3 by column (the §3.2 baseline)            |
+| Spear       | Pierces 2 enemies in the row; 2 from any column; each charged beat adds +3 |
+| Short blade | 1 / 2 / 3 by column; parry counter deals 6                                 |
 
-| Item                  | Specification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bootstrap prompts     | slug, display name (`--title`), author, GitHub user, license, one-line description — no email                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Bootstrap effects     | renames package names, `index.html` title, README, LICENSE, and the daily salt; keeps the sample; renames `GAME_SLUG`/`GAME_TITLE` in `apps/web/src/game-info.ts`; writes `.template-origin`; leaves `AGENTS.md`'s Product section as `TODO:` placeholders; removes itself and its tests (self-removal stays)                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Product section check | a test that fails in a generated repository while `AGENTS.md`'s Product section still contains `TODO:`; it reads `.template-origin` to tell a generated repository from the template, which is exempt. The placeholder is `## Product` followed by the four lines `TODO: What this game is, in one paragraph.`, `TODO: Who it is for, and the core interaction.`, `TODO: Non-goals, copied verbatim from docs/product/requirements.md.`, `TODO: Where decisions live: docs/product/requirements.md and the skills.`                                                                                                                                                                                                                                                                    |
-| Bootstrap e2e         | `pnpm bootstrap:e2e` generates a repository and checks the renamed `GAME_SLUG`; `pnpm bootstrap:check` then expects `tests/product-section.test.ts` to fail, writes a fixture Product section, runs `pnpm check`, and asserts `.package/space-tiles-0.0.0-crazygames.zip` exists                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Skills shipped        | the skills under `.claude/skills/`: `starting-an-app`, `designing-ui`, `writing-game-core`, `building-scenes`, `integrating-portals`, `releasing-builds` (promoted from the stage 7 drafts by P120); `shipping-issues`, `triaging-issues`, `merge-dependabot`; and the process skills `tdd`, `create-pr`, `running-the-app`, `smart-commit` (ported from `tomada1114/intent-to-english` by P015). The conventions the other planned skills were to hold are rules under `.claude/rules/`, each loading when a file matching its `paths` frontmatter is read: `architecture.md`, `bootstrap.md` (template only), `dependencies.md`, `gates.md`, `guidance.md`, `scripts.md`, `tests.md`, `typescript.md`. Neither `codex-shipping-issues` nor `cloud-claude-shipping-issues` is shipped |
-| Skills removed        | `public-api-contract`, `release-impact`, `type-testing` (npm package concerns)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+Sub-weapons — fire by themselves every few beats, including beats spent waiting:
+
+| Sub-weapon     | Level 1                                                                               | Per level                                              |
+| -------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Throwing stars | Every 3 beats, 1 damage to the first enemy in the player's row                        | +1 star to an adjacent row                             |
+| Fire pot       | Every 5 beats, a plus-shaped blast of 2 on a random enemy                             | +1 damage                                              |
+| Weighted chain | Every 4 beats, delays the nearest enemy's next move by 1 beat                         | −1 beat between uses (floor 2)                         |
+| Shadow double  | A manual strike repeats in one adjacent row for half damage, rounded down, at least 1 | Second adjacent row at level 2; full damage at level 3 |
+
+Arts — passive:
+
+| Art         | Per level                                                                              |
+| ----------- | -------------------------------------------------------------------------------------- |
+| Lunge       | Front-column strike +1                                                                 |
+| Deep breath | Charge damage +1 per charged beat                                                      |
+| Keen eye    | Counter damage +2                                                                      |
+| Afterguard  | Damage taken on the beat after a risky action −1 (levels 2–3 extend it by a beat each) |
+| Quick hands | Sub-weapons fire 1 beat sooner at level 2 and 2 beats sooner at level 3 (floor 2)      |
+| Fervor      | Each risky action fills the gauge by +1 more                                           |
+
+Fusions in the MVP:
+
+| Weapon at level 3 | Art         | Result                                                                       |
+| ----------------- | ----------- | ---------------------------------------------------------------------------- |
+| Throwing stars    | Quick hands | Star storm — hits every enemy in all three rows                              |
+| Blade             | Lunge       | Draw cut — a front-column strike pierces the row and counts as a full charge |
+
+### 3.6 Presentation
+
+- Pixel art with a provisional ninja/samurai theme, taken from free assets.
+- Assets may be CC0 or require attribution (such as CC BY). Every asset is listed with
+  its author, source and licence in a credits file in the repository and on a credits
+  screen. Assets that forbid redistribution or modification are not used.
+- What no pack covers is drawn as a placeholder sprite in code.
+- The pack is chosen at the design stage.
+
+### 3.7 Score and modes
+
+| Item  | Specification                                                                                                                                                                |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Score | All spirit earned in the run (§3.5: middle-column hit +1, front-column hit +2, full-charge hit +3, successful parry +5); at the end of a won run, plus remaining health × 10 |
+| Modes | Daily (one seed per UTC day, same line-ups and offers for everyone, share text) and Practice (a new seed each run)                                                           |
+| Best  | The best daily score is kept on the device                                                                                                                                   |
+
+- A lost run keeps the points earned so far and gets no health bonus.
+- Closing the tab ends the run; resume is not in the MVP.
 
 ## 4. Cross-cutting rules
 
-- **Determinism boundary:** anything that reads time, randomness, the device or the
-  network lives in `apps/web` and enters core as a plain value.
-- **No network** except the portal SDK script and its calls.
-- **Storage is optional:** every read and write goes through `Platform.storage`, which
-  never throws.
-- **Accessibility:** colour is never the only signal (each tile kind has a glyph); text
-  contrast ≥ 4.5:1, tile and control contrast ≥ 3:1; every action reachable by keyboard.
-- **First minute:** gameplay reachable in at most two taps from load; no blocking
-  tutorial.
-
-## 5. Data
-
-| Entity | Fields                                                        | Where                                       | Kept                     |
-| ------ | ------------------------------------------------------------- | ------------------------------------------- | ------------------------ |
-| State  | `seed: int`, `cells: int[25]`, `movesUsed: int`, `limit: int` | memory                                      | session                  |
-| Move   | `{ cell: int 0–24 }`                                          | memory, replay                              | session                  |
-| Replay | `{ v: 1, seed, config, moves }`                               | memory (sent to a server later)             | session                  |
-| Best   | `int 1–20` (Daily only; 0 never stored)                       | `Platform.storage`, key `<slug>:best:<day>` | until storage is cleared |
+- Every action is available by touch and by keyboard.
+- The same seed and the same list of actions always give the same run.
 
 ## 6. Open questions
 
-- CrazyGames leaderboards / account features for a daily mode — settle at the game's
-  kickoff.
-- Whether a game relies on the CrazyGames data module (Progress Save) instead of
-  `localStorage` — the docs require relying fully on it once enabled
-  (https://docs.crazygames.com/sdk/data/, checked 2026-11-05); each game decides.
+- **Tuning (§3.2, §3.3, §3.5, §3.7)** — the owner accepted the values as a starting
+  point; a first playable build tunes them.
+- **Asset pack** — which pack, and whether one style covers the player, 4 enemies and a
+  boss; settled at the design stage.
+- **Where it is published** — played locally first; the target (own static page or a
+  portal) is decided after playing. The template's portal packaging stays untouched.
 
 ## 7. Decision log
 
-- 2026-11-05 Template first, game later (rejected: kicking off the game directly,
-  because its base rule is undecided and the hearing would stall on it).
-- 2026-11-05 Phaser 4 for rendering (rejected: no engine — more hand-written feel and
-  scaling work; PixiJS 8 — renderer only; Excalibur 0.32 — pre-1.0 API; KAPLAY —
-  JS-first API). PixiJS 8.22, Excalibur 0.32 and KAPLAY versions per
-  https://registry.npmjs.org/pixi.js, https://registry.npmjs.org/excalibur and
-  https://registry.npmjs.org/kaplay (checked 2026-11-05).
-- 2026-11-05 Cut from typescript-template and remove its npm machinery (rejected:
-  keeping it dormant — gates that check nothing real).
-- 2026-11-05 Port the agent harness layout of `tomada1114/intent-to-english` in an early
-  issue; the repository is public and named `web-game-template`.
-- 2026-11-05 Size budget 5 MB (rejected: 20 MB, the portal ceiling — a budget at the
-  ceiling gives no warning).
+- 2026-11-26 Act-to-advance time (rejected: real-time on fixed ticks, because feel
+  tuning needs playtesting the tests cannot cover and touch input is hard; beat-paced
+  time kept as a Later timer; full turn-based puzzle, because it is furthest from the
+  wanted feel).
+- 2026-11-26 Three risk axes — distance, charge, parry (rejected: one charge attack, too
+  narrow for varied strategies; three cooldown skills, closer to a chip system).
+- 2026-11-26 Two 3×3 territories with a neutral column (rejected: an open 7×3 board,
+  more rules; a single row, loses dodging between rows).
+- 2026-11-26 Run of 5 battles with upgrade picks, 4 enemy kinds + boss, 12 upgrades
+  (rejected: single battle, too thin; 8 battles and 20 upgrades, too much to tune
+  first).
+- 2026-11-26 Seeded randomness for line-ups, offers and enemy move choice; every chosen
+  attack is announced before it lands (rejected: fixed enemy cycles, the owner wants
+  enemies to vary; hit or damage rolls, because an announced attack must be reliable).
+- 2026-11-26 Build modelled on survivor-style games: automatic sub-weapons, levels,
+  weapon-plus-art fusions, picks earned through a gauge filled by risky actions
+  (rejected: 12 flat upgrades with one pick per won battle, only 4 picks per run and no
+  growth within an item). Size is 3 main weapons, 4 sub-weapons, 6 arts, 2 fusions —
+  larger than the 12-upgrade size chosen earlier; the owner confirmed the larger size
+  (rejected: starting with the blade only).
+- 2026-11-26 Pixel art from free assets, ninja/samurai theme (rejected: abstract shapes;
+  code-drawn sprites).
+- 2026-11-26 Working title Beatana.
+- 2026-11-26 Score rewards risk taken (rejected: beat count, gives no reason to take
+  risks; no score, leaves only builds as a reason to replay).
+- 2026-11-26 Daily mode stays (rejected: removing it, which is work for less game).
+- 2026-11-26 Local play first; publishing target decided later (rejected for now: own
+  static page, CrazyGames).
+- 2026-11-26 Assets may require attribution (rejected: CC0 only, too few packs; a
+  private repository with any licence, the problem returns on publishing).
